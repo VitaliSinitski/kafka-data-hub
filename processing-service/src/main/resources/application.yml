@@ -1,0 +1,16 @@
+server:
+  port: 8081
+
+spring:
+  kafka:
+    consumer:
+      group-id: "topic-article-readers"
+      bootstrap-servers: localhost:9092
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: kafka-db
+
+topic:
+  name: docs.article

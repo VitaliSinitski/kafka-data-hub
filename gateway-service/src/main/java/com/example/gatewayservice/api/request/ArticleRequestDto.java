@@ -10,7 +10,6 @@ public class ArticleRequestDto {
     @NotBlank(message = "This field is required")
     private String title;
     @NotBlank(message = "This field is required")
-    private String description;
-    @NotBlank(message = "This field is required")
     private String author;
+    private String description;
 }

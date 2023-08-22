@@ -21,5 +21,4 @@ public class ArticleService {
         return producer.sendMessage(article);
     }
 
-
 }

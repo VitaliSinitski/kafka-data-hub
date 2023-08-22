@@ -10,7 +10,8 @@ public class GatewayServiceApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(GatewayServiceApplication.class, args);
-        log.info("Kafka Producer Running...");
+        log.info("... Kafka - GatewayService - Running ...");
+
     }
 
 }
