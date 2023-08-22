@@ -1,0 +1,101 @@
+version: "3.7"
+
+networks:
+  kafka-net:
+    name: kafka-net
+    driver: bridge
+
+services:
+  zookeeper:
+    image: zookeeper:3.7.0
+    container_name: zookeeper
+    restart: "no"
+    networks:
+      - kafka-net
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: obsidiandynamics/kafka
+    container_name: kafka
+    restart: "no"
+    networks:
+      - kafka-net
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: DOCKER_INTERNAL:PLAINTEXT,DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: DOCKER_INTERNAL://:29092,DOCKER_EXTERNAL://:9092
+      KAFKA_ADVERTISED_LISTENERS: DOCKER_INTERNAL://kafka:29092,DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER_INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TOPIC_duplicate-filter-processor-KSTREAM-AGGREGATE-STATE-STORE-0000000002-repartition: "replication.factor=3"
+
+    depends_on:
+      - zookeeper
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    container_name: kafdrop
+    restart: "no"
+    networks:
+      - kafka-net
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:29092"
+    depends_on:
+      - "kafka"
+
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: "no"
+    networks:
+      - kafka-net
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - mongodb-data:/data/db
+
+  mongodb-compass:
+    image: mongoclient/mongoclient
+    container_name: mongodb-compass
+    restart: "no"
+    networks:
+      - kafka-net
+    ports:
+      - "3000:3000"
+    environment:
+      MONGO_URL: mongodb://root:root@mongodb:27017
+      ROOT_URL: http://localhost
+      PORT: 3000
+
+#  mongo-shell:
+#    image: mongo:latest
+#    container_name: mongo-shell
+#    command: ["tail", "-f", "/dev/null"]  # Запустим "пустой" процесс, чтобы контейнер не завершался сразу
+#    depends_on:
+#      - mongodb
+#    stdin_open: true  # Открываем stdin для интерактивного ввода
+#    tty: true         # Запускаем контейнер в режиме TTY (терминала)
+
+  mongo-shell:
+    image: mongo:latest
+    container_name: mongo-shell
+#    command: [ "mongo" ]  # Запустить оболочку MongoDB при старте контейнера
+#    command: ["/usr/bin/mongo"]  # Используем полный путь к исполняемому файлу mongo
+    command: ["mongosh"]
+    depends_on:
+      - mongodb
+    stdin_open: true  # Открываем stdin для интерактивного ввода
+    tty: true         # Запускаем контейнер в режиме TTY (терминала)
+
+volumes:
+  mongodb-data:
